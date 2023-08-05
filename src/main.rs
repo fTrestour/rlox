@@ -7,7 +7,7 @@ fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
 
     if args.len() == 2 {
-        run_file(&args[1])
+        run_file(&args[1]).or_else(|_| process::exit(65))
     } else if args.len() == 1 {
         run_prompt()
     } else {

@@ -1,9 +1,15 @@
+mod error;
+mod scanner;
+mod token;
+
 use anyhow::Result;
+use error::LoxError;
+use scanner::scan_tokens;
 use std::{fs, io};
 
 pub fn run_file(filename: &str) -> Result<()> {
     let file = fs::read_to_string(&filename)?;
-    run(&file)
+    Ok(run(&file)?)
 }
 
 pub fn run_prompt() -> Result<()> {
@@ -14,12 +20,22 @@ pub fn run_prompt() -> Result<()> {
         let line = line.trim();
 
         if !line.is_empty() {
-            run(line)?;
+            run(line);
         }
     }
 }
 
-fn run(code: &str) -> Result<()> {
-    print!("Running code: {}", code);
-    todo!()
+fn run(source: &str) -> Result<(), LoxError> {
+    let result = scan_tokens(source);
+
+    match result {
+        Ok(tokens) => {
+            println!("{:?}", tokens);
+            Ok(())
+        }
+        Err(error) => {
+            println!("{}", error);
+            Err(error)
+        }
+    }
 }
