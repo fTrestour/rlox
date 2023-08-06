@@ -1,6 +1,7 @@
 mod error;
 mod scanner;
 mod token;
+mod types;
 
 use anyhow::Result;
 use error::LoxError;

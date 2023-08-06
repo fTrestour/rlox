@@ -1,8 +1,10 @@
 use std::{error::Error, fmt::Display};
 
+use crate::types::Line;
+
 #[derive(Debug)]
 pub struct LoxError {
-    pub line: usize,
+    pub line: Line,
     pub message: String,
 }
 
