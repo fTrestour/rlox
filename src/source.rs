@@ -53,6 +53,18 @@ impl Source<'_> {
         }
     }
 
+    pub fn consume_digits(&mut self) {
+        while self.peek_char().map(|c| c.is_digit(10)) == Some(true) {
+            self.next_char();
+        }
+    }
+
+    pub fn consume_alphanumeric(&mut self) {
+        while self.peek_char().map(|c| c.is_alphanumeric()) == Some(true) {
+            self.next_char();
+        }
+    }
+
     pub fn flush_lexeme(&mut self) -> String {
         let lexeme = self.pending_lexeme.clone();
         self.pending_lexeme = String::new();

@@ -42,7 +42,7 @@ fn run(source: &str) -> Option<()> {
 
     match result {
         Ok(tokens) => {
-            println!("{:?}", tokens);
+            dbg!("{:?}", tokens);
             Some(())
         }
         Err(report) => {
