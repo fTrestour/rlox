@@ -7,7 +7,7 @@ use anyhow::{Context, Result};
 use scanner::scan_tokens;
 use std::{
     fs,
-    io::{self},
+    io::{self, Write},
 };
 
 pub fn run_file(filename: &str) -> Result<()> {
@@ -18,15 +18,22 @@ pub fn run_file(filename: &str) -> Result<()> {
 
 pub fn run_prompt() -> Result<()> {
     loop {
-        let mut line = String::new();
-        io::stdin().read_line(&mut line)?;
-
-        let line = line.trim();
+        let line = invite()?;
 
         if !line.is_empty() {
-            run(line);
+            run(&line);
         }
     }
+}
+
+fn invite() -> Result<String> {
+    print!("> ");
+    io::stdout().flush()?;
+
+    let mut line = String::new();
+    io::stdin().read_line(&mut line)?;
+
+    Ok(line.trim().to_owned())
 }
 
 fn run(source: &str) -> Option<()> {
