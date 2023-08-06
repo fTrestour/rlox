@@ -3,14 +3,17 @@ mod scanner;
 mod token;
 mod types;
 
-use anyhow::Result;
-use error::LoxError;
+use anyhow::{Context, Result};
 use scanner::scan_tokens;
-use std::{fs, io};
+use std::{
+    fs,
+    io::{self},
+};
 
 pub fn run_file(filename: &str) -> Result<()> {
-    let file = fs::read_to_string(&filename)?;
-    Ok(run(&file)?)
+    let file =
+        fs::read_to_string(&filename).context(format!("Failed reading file {}", filename))?;
+    run(&file).context("Failed running lox code")
 }
 
 pub fn run_prompt() -> Result<()> {
@@ -26,17 +29,17 @@ pub fn run_prompt() -> Result<()> {
     }
 }
 
-fn run(source: &str) -> Result<(), LoxError> {
+fn run(source: &str) -> Option<()> {
     let result = scan_tokens(source);
 
     match result {
         Ok(tokens) => {
             println!("{:?}", tokens);
-            Ok(())
+            Some(())
         }
-        Err(error) => {
-            println!("{}", error);
-            Err(error)
+        Err(report) => {
+            println!("{}", report);
+            None
         }
     }
 }
