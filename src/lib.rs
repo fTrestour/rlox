@@ -1,11 +1,15 @@
 mod error;
+mod grammar;
+mod parser;
 mod scanner;
 mod source;
 mod token;
 mod types;
 
 use anyhow::{Context, Result};
-use scanner::scan_tokens;
+use error::Report;
+use parser::parse;
+use scanner::scan;
 use std::{
     fs,
     io::{self, Write},
@@ -38,14 +42,17 @@ fn invite() -> Result<String> {
 }
 
 fn run(source: &str) -> Option<()> {
-    let result = scan_tokens(source);
+    let tokens = scan(source).ok()?;
 
-    match result {
-        Ok(tokens) => {
-            dbg!("{:?}", tokens);
+    let mut report = Report::new();
+    let ast = parse(&mut tokens.iter().peekable(), &mut report);
+
+    match ast {
+        Some(ast) => {
+            dbg!("{:?}", ast);
             Some(())
         }
-        Err(report) => {
+        None => {
             println!("{}", report);
             None
         }
