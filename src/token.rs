@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::types::Line;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TokenType {
     LeftParen,
     RightParen,
