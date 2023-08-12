@@ -7,13 +7,14 @@ mod token;
 mod types;
 
 use anyhow::{Context, Result};
-use error::Report;
 use parser::parse;
 use scanner::scan;
+use source::Source;
 use std::{
     fs,
     io::{self, Write},
 };
+use token::Tokens;
 
 pub fn run_file(filename: &str) -> Result<()> {
     let file =
@@ -42,17 +43,18 @@ fn invite() -> Result<String> {
 }
 
 fn run(source: &str) -> Option<()> {
-    let tokens = scan(source).ok()?;
+    let source = Source::new(source);
+    let tokens = scan(source);
 
-    let mut report = Report::new();
-    let ast = parse(&mut tokens.iter().peekable(), &mut report);
+    let tokens = tokens.map(Tokens::new);
+    let ast = tokens.and_then(parse);
 
     match ast {
-        Some(ast) => {
+        Ok(ast) => {
             dbg!("{:?}", ast);
             Some(())
         }
-        None => {
+        Err(report) => {
             println!("{}", report);
             None
         }

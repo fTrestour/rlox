@@ -4,10 +4,9 @@ use crate::{
     token::{Token, TokenType},
 };
 
-pub fn scan(source: &str) -> Result<Vec<Token>, Report> {
+pub fn scan(source: Source) -> Result<Vec<Token>, Report> {
     let mut tokens: Vec<Token> = Vec::new();
     let mut report = Report::new();
-    let source = Source::new(source);
 
     scan_tokens_rec(source, &mut tokens, &mut report);
 

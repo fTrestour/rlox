@@ -42,8 +42,4 @@ impl Report {
     pub fn push(&mut self, error: LoxError) {
         self.errors.push(error);
     }
-
-    pub fn append(&mut self, other: &mut Self) {
-        self.errors.append(&mut other.errors);
-    }
 }

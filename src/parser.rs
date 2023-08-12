@@ -1,26 +1,19 @@
-use std::{iter::Peekable, slice::Iter};
-
 use crate::{
     error::{LoxError, Report},
     grammar::Expression,
-    token::{Token, TokenType},
+    token::{TokenType, Tokens},
 };
 
-pub fn parse(tokens: &mut Peekable<Iter<'_, Token>>, report: &mut Report) -> Option<Expression> {
-    parse_expression(tokens, report)
+pub fn parse(mut tokens: Tokens) -> Result<Expression, Report> {
+    let mut report = Report::new();
+    parse_expression(&mut tokens, &mut report).ok_or(report)
 }
 
-fn parse_expression(
-    tokens: &mut Peekable<Iter<'_, Token>>,
-    report: &mut Report,
-) -> Option<Expression> {
+fn parse_expression(tokens: &mut Tokens, report: &mut Report) -> Option<Expression> {
     parse_equality(tokens, report)
 }
 
-fn parse_equality(
-    tokens: &mut Peekable<Iter<'_, Token>>,
-    report: &mut Report,
-) -> Option<Expression> {
+fn parse_equality(tokens: &mut Tokens, report: &mut Report) -> Option<Expression> {
     let left = parse_comparison(tokens, report)?;
 
     match tokens.peek()?.token_type {
@@ -40,10 +33,7 @@ fn parse_equality(
     }
 }
 
-fn parse_comparison(
-    tokens: &mut Peekable<Iter<'_, Token>>,
-    report: &mut Report,
-) -> Option<Expression> {
+fn parse_comparison(tokens: &mut Tokens, report: &mut Report) -> Option<Expression> {
     let left = parse_term(tokens, report)?;
 
     match tokens.peek()?.token_type {
@@ -79,7 +69,7 @@ fn parse_comparison(
     }
 }
 
-fn parse_term(tokens: &mut Peekable<Iter<'_, Token>>, report: &mut Report) -> Option<Expression> {
+fn parse_term(tokens: &mut Tokens, report: &mut Report) -> Option<Expression> {
     let left = parse_factor(tokens, report)?;
 
     match tokens.peek()?.token_type {
@@ -101,10 +91,10 @@ fn parse_term(tokens: &mut Peekable<Iter<'_, Token>>, report: &mut Report) -> Op
     }
 }
 
-fn parse_factor(tokens: &mut Peekable<Iter<'_, Token>>, report: &mut Report) -> Option<Expression> {
+fn parse_factor(tokens: &mut Tokens, report: &mut Report) -> Option<Expression> {
     let left = parse_unary(tokens, report)?;
 
-    match tokens.peek()?.token_type {
+    match tokens.peek_type()? {
         TokenType::Slash => {
             tokens.next();
             Some(Expression::Divide(
@@ -123,8 +113,8 @@ fn parse_factor(tokens: &mut Peekable<Iter<'_, Token>>, report: &mut Report) -> 
     }
 }
 
-fn parse_unary(tokens: &mut Peekable<Iter<'_, Token>>, report: &mut Report) -> Option<Expression> {
-    match tokens.peek()?.token_type {
+fn parse_unary(tokens: &mut Tokens, report: &mut Report) -> Option<Expression> {
+    match tokens.peek_type()? {
         TokenType::Bang => {
             tokens.next();
             Some(Expression::Not(Box::new(parse_unary(tokens, report)?)))
@@ -140,18 +130,16 @@ fn parse_unary(tokens: &mut Peekable<Iter<'_, Token>>, report: &mut Report) -> O
     }
 }
 
-fn parse_primary(
-    tokens: &mut Peekable<Iter<'_, Token>>,
-    report: &mut Report,
-) -> Option<Expression> {
-    match &tokens.peek()?.token_type {
+fn parse_primary(tokens: &mut Tokens, report: &mut Report) -> Option<Expression> {
+    match tokens.peek_type()? {
         TokenType::Number(n) => {
             tokens.next();
-            Some(Expression::Number(*n))
+            Some(Expression::Number(n))
         }
         TokenType::String(s) => {
+            let s = s.clone();
             tokens.next();
-            Some(Expression::String(s.clone()))
+            Some(Expression::String(s))
         }
         TokenType::True => {
             tokens.next();
