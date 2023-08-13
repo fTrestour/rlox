@@ -1,12 +1,15 @@
 mod error;
 mod grammar;
+mod interpreter;
 mod parser;
 mod scanner;
 mod source;
 mod token;
 mod types;
+mod value;
 
 use anyhow::{Context, Result};
+use interpreter::interpret;
 use parser::parse;
 use scanner::scan;
 use source::Source;
@@ -48,14 +51,15 @@ fn run(source: &str) -> Option<()> {
 
     let tokens = tokens.map(Tokens::new);
     let ast = tokens.and_then(parse);
+    let value = ast.map(interpret);
 
-    match ast {
-        Ok(ast) => {
-            dbg!("{:?}", ast);
+    match value {
+        Ok(value) => {
+            println!("{}", value);
             Some(())
         }
         Err(report) => {
-            println!("{}", report);
+            print!("{}", report);
             None
         }
     }
