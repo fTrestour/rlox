@@ -43,3 +43,13 @@ impl Report {
         self.errors.push(error);
     }
 }
+
+pub struct LoxRuntimeError {
+    pub message: String,
+}
+
+impl Display for LoxRuntimeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Runtime error: {}", self.message)
+    }
+}

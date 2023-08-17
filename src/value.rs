@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use crate::error::LoxRuntimeError;
+
 pub enum LoxValue {
     LoxNil,
     LoxNumber(f64),
@@ -26,12 +28,12 @@ impl LoxValue {
         }
     }
 
-    pub fn as_number(&self) -> f64 {
+    pub fn as_number(&self) -> Result<f64, LoxRuntimeError> {
         match *self {
-            LoxValue::LoxNil => todo!(),
-            LoxValue::LoxNumber(n) => n,
-            LoxValue::LoxString(_) => todo!(),
-            LoxValue::LoxBoolean(_) => todo!(),
+            LoxValue::LoxNumber(n) => Ok(n),
+            _ => Err(LoxRuntimeError {
+                message: format!("{} is not a number", self),
+            }),
         }
     }
 

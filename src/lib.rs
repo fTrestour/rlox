@@ -51,12 +51,21 @@ fn run(source: &str) -> Option<()> {
 
     let tokens = tokens.map(Tokens::new);
     let ast = tokens.and_then(parse);
-    let value = ast.map(interpret);
 
-    match value {
-        Ok(value) => {
-            println!("{}", value);
-            Some(())
+    match ast {
+        Ok(ast) => {
+            let value = interpret(ast);
+
+            match value {
+                Ok(value) => {
+                    println!("{}", value);
+                    Some(())
+                }
+                Err(error) => {
+                    println!("{}", error);
+                    None
+                }
+            }
         }
         Err(report) => {
             print!("{}", report);
