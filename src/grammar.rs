@@ -18,3 +18,9 @@ pub enum Expression {
     Divide(Box<Expression>, Box<Expression>),
     Paren(Box<Expression>),
 }
+
+#[derive(Debug)]
+pub enum Statement {
+    Expression(Expression),
+    Print(Expression),
+}

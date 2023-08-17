@@ -1,12 +1,53 @@
 use crate::{
     error::{LoxError, Report},
-    grammar::Expression,
+    grammar::{Expression, Statement},
     token::{TokenType, Tokens},
 };
 
-pub fn parse(mut tokens: Tokens) -> Result<Expression, Report> {
+pub fn parse(mut tokens: Tokens) -> Result<Vec<Statement>, Report> {
+    let mut statements: Vec<Statement> = vec![];
     let mut report = Report::new();
-    parse_expression(&mut tokens, &mut report).ok_or(report)
+
+    while let Some(statement) = parse_statement(&mut tokens, &mut report) {
+        statements.push(statement);
+    }
+
+    if report.is_empty() {
+        Ok(statements)
+    } else {
+        Err(report)
+    }
+}
+
+fn parse_statement(tokens: &mut Tokens, report: &mut Report) -> Option<Statement> {
+    let token_type = tokens.peek_type().expect("Invalid tokens list"); // TODO: Improve
+    let statement = match token_type {
+        TokenType::Eof => {
+            tokens.next();
+            None
+        }
+        TokenType::Print => {
+            tokens.next();
+            let expression = parse_expression(tokens, report)?;
+            Some(Statement::Print(expression))
+        }
+        _ => {
+            let expression = parse_expression(tokens, report)?;
+            Some(Statement::Expression(expression))
+        }
+    }?;
+
+    let next_token_type = tokens.peek_type()?; // TODO: Improve
+    if let TokenType::Semicolon = next_token_type {
+        tokens.next();
+        Some(statement)
+    } else {
+        report.push(LoxError {
+            line: 1000,
+            message: "Expected ';'".to_owned(),
+        }); // TODO: improve line handling
+        None
+    }
 }
 
 fn parse_expression(tokens: &mut Tokens, report: &mut Report) -> Option<Expression> {

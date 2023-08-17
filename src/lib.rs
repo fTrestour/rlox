@@ -51,22 +51,17 @@ fn run(source: &str) -> Option<()> {
     let tokens = scan(source);
 
     let tokens = tokens.map(Tokens::new);
-    let ast = tokens.and_then(parse);
+    let statements = tokens.and_then(parse);
 
-    match ast {
-        Ok(ast) => {
-            let value = interpret(ast);
-
-            match value {
-                Ok(value) => {
-                    println!("{}", value);
-                    Some(())
-                }
-                Err(error) => {
+    match statements {
+        Ok(statements) => {
+            for statement in statements {
+                if let Err(error) = interpret(statement) {
                     println!("{}", error);
-                    None
+                    return None;
                 }
             }
+            Some(())
         }
         Err(report) => {
             print!("{}", report);

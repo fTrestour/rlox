@@ -1,41 +1,59 @@
-use crate::{error::LoxRuntimeError, grammar::Expression, value::LoxValue};
+use crate::{
+    error::LoxRuntimeError,
+    grammar::{Expression, Statement},
+    value::LoxValue,
+};
 
-pub fn interpret(expression: Expression) -> Result<LoxValue, LoxRuntimeError> {
+pub fn interpret(statement: Statement) -> Result<(), LoxRuntimeError> {
+    match statement {
+        Statement::Print(expression) => {
+            let value = evaluate(expression);
+            value.map(|value| println!("{}", value))?;
+            Ok(())
+        }
+        Statement::Expression(expression) => {
+            evaluate(expression)?;
+            Ok(())
+        }
+    }
+}
+
+pub fn evaluate(expression: Expression) -> Result<LoxValue, LoxRuntimeError> {
     match expression {
         Expression::Number(n) => Ok(LoxValue::LoxNumber(n)),
         Expression::String(s) => Ok(LoxValue::LoxString(s)),
         Expression::True => Ok(LoxValue::LoxBoolean(true)),
         Expression::False => Ok(LoxValue::LoxBoolean(false)),
         Expression::Nil => Ok(LoxValue::LoxNil),
-        Expression::Paren(expression) => interpret(*expression),
+        Expression::Paren(expression) => evaluate(*expression),
         Expression::Not(expression) => {
-            let value = interpret(*expression)?;
+            let value = evaluate(*expression)?;
             Ok(LoxValue::LoxBoolean(!value.is_truthy()))
         }
         Expression::Minus(left, right) => {
-            let left = interpret(*left)?;
+            let left = evaluate(*left)?;
             let left = left.as_number()?;
-            let right = interpret(*right)?;
+            let right = evaluate(*right)?;
             let right = right.as_number()?;
             Ok(LoxValue::LoxNumber(left - right))
         }
         Expression::Multiply(left, right) => {
-            let left = interpret(*left)?;
+            let left = evaluate(*left)?;
             let left = left.as_number()?;
-            let right = interpret(*right)?;
+            let right = evaluate(*right)?;
             let right = right.as_number()?;
             Ok(LoxValue::LoxNumber(left * right))
         }
         Expression::Divide(left, right) => {
-            let left = interpret(*left)?;
+            let left = evaluate(*left)?;
             let left = left.as_number()?;
-            let right = interpret(*right)?;
+            let right = evaluate(*right)?;
             let right = right.as_number()?;
             Ok(LoxValue::LoxNumber(left / right))
         }
         Expression::Plus(left, right) => {
-            let left = interpret(*left)?;
-            let right = interpret(*right)?;
+            let left = evaluate(*left)?;
+            let right = evaluate(*right)?;
             match (left, right) {
                 (LoxValue::LoxNumber(n1), LoxValue::LoxNumber(n2)) => {
                     Ok(LoxValue::LoxNumber(n1 + n2))
@@ -49,41 +67,41 @@ pub fn interpret(expression: Expression) -> Result<LoxValue, LoxRuntimeError> {
             }
         }
         Expression::Greater(left, right) => {
-            let left = interpret(*left)?;
+            let left = evaluate(*left)?;
             let left = left.as_number()?;
-            let right = interpret(*right)?;
+            let right = evaluate(*right)?;
             let right = right.as_number()?;
             Ok(LoxValue::LoxBoolean(left > right))
         }
         Expression::GreaterEqual(left, right) => {
-            let left = interpret(*left)?;
+            let left = evaluate(*left)?;
             let left = left.as_number()?;
-            let right = interpret(*right)?;
+            let right = evaluate(*right)?;
             let right = right.as_number()?;
             Ok(LoxValue::LoxBoolean(left >= right))
         }
         Expression::Less(left, right) => {
-            let left = interpret(*left)?;
+            let left = evaluate(*left)?;
             let left = left.as_number()?;
-            let right = interpret(*right)?;
+            let right = evaluate(*right)?;
             let right = right.as_number()?;
             Ok(LoxValue::LoxBoolean(left < right))
         }
         Expression::LessEqual(left, right) => {
-            let left = interpret(*left)?;
+            let left = evaluate(*left)?;
             let left = left.as_number()?;
-            let right = interpret(*right)?;
+            let right = evaluate(*right)?;
             let right = right.as_number()?;
             Ok(LoxValue::LoxBoolean(left <= right))
         }
         Expression::Equal(left, right) => {
-            let left = interpret(*left)?;
-            let right = interpret(*right)?;
+            let left = evaluate(*left)?;
+            let right = evaluate(*right)?;
             Ok(LoxValue::LoxBoolean(left.is_equal(&right)))
         }
         Expression::NotEqual(left, right) => {
-            let left = interpret(*left)?;
-            let right = interpret(*right)?;
+            let left = evaluate(*left)?;
+            let right = evaluate(*right)?;
             Ok(LoxValue::LoxBoolean(!left.is_equal(&right)))
         }
     }
