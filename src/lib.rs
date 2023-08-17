@@ -40,7 +40,7 @@ fn invite() -> Result<String> {
     io::stdout().flush()?;
 
     let mut line = String::new();
-    io::stdin().read_line(&mut line)?;
+    io::stdin().read_line(&mut line)?; // FIXME: Pasting many lines breaks this
 
     Ok(line.trim().to_owned())
 }

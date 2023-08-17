@@ -20,7 +20,7 @@ pub fn parse(mut tokens: Tokens) -> Result<Vec<Statement>, Report> {
 }
 
 fn parse_statement(tokens: &mut Tokens, report: &mut Report) -> Option<Statement> {
-    let token_type = tokens.peek_type().expect("Invalid tokens list"); // TODO: Improve
+    let token_type = tokens.peek_type().expect("Invalid tokens list"); // TODO: Improve error handling
     let statement = match token_type {
         TokenType::Eof => {
             tokens.next();
@@ -37,7 +37,7 @@ fn parse_statement(tokens: &mut Tokens, report: &mut Report) -> Option<Statement
         }
     }?;
 
-    let next_token_type = tokens.peek_type()?; // TODO: Improve
+    let next_token_type = tokens.peek_type()?; // TODO: Improve error handling
     if let TokenType::Semicolon = next_token_type {
         tokens.next();
         Some(statement)
