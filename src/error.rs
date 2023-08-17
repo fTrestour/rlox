@@ -47,6 +47,7 @@ impl Report {
 pub struct LoxRuntimeError {
     pub message: String,
 }
+// TODO: Add line handling
 
 impl Display for LoxRuntimeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

@@ -45,6 +45,7 @@ fn invite() -> Result<String> {
     Ok(line.trim().to_owned())
 }
 
+// TODO: return a result to differentiate static vs runtime errors
 fn run(source: &str) -> Option<()> {
     let source = Source::new(source);
     let tokens = scan(source);
