@@ -13,7 +13,8 @@ impl Display for LoxValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             LoxValue::LoxNil => write!(f, "nil"),
-            LoxValue::LoxNumber(n) => write!(f, "{}", n),
+            LoxValue::LoxNumber(n) if n.fract() == 0. => write!(f, "{}", n),
+            LoxValue::LoxNumber(n) => write!(f, "{:.2}", n),
             LoxValue::LoxString(s) => write!(f, "\"{}\"", s),
             LoxValue::LoxBoolean(b) => write!(f, "{}", b),
         }
