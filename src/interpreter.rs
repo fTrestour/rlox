@@ -35,7 +35,7 @@ impl Interpreter {
         }
     }
 
-    pub fn evaluate(&self, expression: Expression) -> Result<Value, LoxRuntimeError> {
+    pub fn evaluate(&mut self, expression: Expression) -> Result<Value, LoxRuntimeError> {
         match expression {
             Expression::Number(n) => Ok(Value::Number(n)),
             Expression::String(s) => Ok(Value::String(s)),
@@ -118,6 +118,12 @@ impl Interpreter {
                 Ok(Value::Boolean(!left.is_equal(&right)))
             }
             Expression::Variable(name) => self.environment.get(&name),
+            Expression::Assignment(name, value) => {
+                let value = self.evaluate(*value)?;
+                self.environment.assign(name, value.clone())?;
+
+                Ok(value)
+            }
         }
     }
 }

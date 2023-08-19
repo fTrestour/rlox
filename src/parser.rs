@@ -91,7 +91,28 @@ fn parse_statement(tokens: &mut Tokens) -> Result<Declaration, LoxError> {
 }
 
 fn parse_expression(tokens: &mut Tokens) -> Result<Expression, LoxError> {
-    parse_equality(tokens)
+    parse_assignment(tokens)
+}
+
+fn parse_assignment(tokens: &mut Tokens) -> Result<Expression, LoxError> {
+    let left = parse_equality(tokens)?;
+
+    if tokens.peek_type() == TokenType::Equal {
+        tokens.next();
+
+        if let Expression::Variable(name) = left {
+            let assignment = parse_assignment(tokens)?;
+            Ok(Expression::Assignment(name, Box::new(assignment)))
+        } else {
+            let token = tokens.peek();
+            Err(LoxError {
+                line: token.line,
+                message: format!("Invalid assignment target."),
+            })
+        }
+    } else {
+        Ok(left)
+    }
 }
 
 fn parse_equality(tokens: &mut Tokens) -> Result<Expression, LoxError> {

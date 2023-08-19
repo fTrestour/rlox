@@ -18,6 +18,7 @@ pub enum Expression {
     Divide(Box<Expression>, Box<Expression>),
     Paren(Box<Expression>),
     Variable(String),
+    Assignment(String, Box<Expression>),
 }
 
 #[derive(Debug, PartialEq)]
