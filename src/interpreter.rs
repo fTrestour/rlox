@@ -12,7 +12,7 @@ pub struct Interpreter {
 impl Interpreter {
     pub fn new() -> Interpreter {
         Interpreter {
-            environment: Environment::new(),
+            environment: Environment::new_global(),
         }
     }
 
