@@ -1,20 +1,21 @@
 use crate::{
     error::LoxRuntimeError,
-    grammar::{Expression, Statement},
+    grammar::{Declaration, Expression},
     value::LoxValue,
 };
 
-pub fn interpret(statement: Statement) -> Result<(), LoxRuntimeError> {
-    match statement {
-        Statement::Print(expression) => {
+pub fn interpret(declaration: Declaration) -> Result<(), LoxRuntimeError> {
+    match declaration {
+        Declaration::Print(expression) => {
             let value = evaluate(expression);
             value.map(|value| println!("{}", value))?;
             Ok(())
         }
-        Statement::Expression(expression) => {
+        Declaration::Expression(expression) => {
             evaluate(expression)?;
             Ok(())
         }
+        Declaration::Var(_, _) => todo!(),
     }
 }
 
@@ -104,5 +105,6 @@ pub fn evaluate(expression: Expression) -> Result<LoxValue, LoxRuntimeError> {
             let right = evaluate(*right)?;
             Ok(LoxValue::LoxBoolean(!left.is_equal(&right)))
         }
+        Expression::Variable(_) => todo!(),
     }
 }

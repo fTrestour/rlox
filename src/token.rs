@@ -1,6 +1,6 @@
 use std::{fmt, iter::Peekable, vec::IntoIter};
 
-use crate::types::Line;
+use crate::{error::LoxError, types::Line};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
@@ -69,18 +69,41 @@ impl Tokens {
         }
     }
 
-    pub fn peek(&mut self) -> Option<Token> {
-        let test = self.peekable.peek()?;
-        let test = test.clone();
-        Some(test)
+    pub fn peek(&mut self) -> Token {
+        self.peekable
+            .peek()
+            .expect("Tokens should not be read after EOF")
+            .clone()
     }
 
-    pub fn peek_type(&mut self) -> Option<TokenType> {
-        let test = self.peek()?;
-        Some(test.token_type)
+    pub fn peek_type(&mut self) -> TokenType {
+        self.peek().token_type
     }
 
-    pub fn next(&mut self) -> Option<Token> {
-        self.peekable.next()
+    pub fn next(&mut self) -> Token {
+        self.peekable
+            .next()
+            .expect("Tokens should not be read after EOF")
+    }
+
+    pub fn consume_semicolon(&mut self) -> Result<(), LoxError> {
+        if self.peek_type() == TokenType::Semicolon {
+            self.next();
+            Ok(())
+        } else {
+            let token = self.peek();
+            Err(LoxError {
+                line: token.line,
+                message: format!("Expected ';', got '{}' instead", token.lexeme),
+            })
+        }
+    }
+
+    pub fn consume_until_semicolon(&mut self) -> Option<()> {
+        self.peekable
+            .by_ref()
+            .skip_while(|token| token.token_type != TokenType::Semicolon)
+            .next()
+            .map(|_| ())
     }
 }

@@ -2,7 +2,7 @@ use std::{error::Error, fmt::Display};
 
 use crate::types::Line;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct LoxError {
     pub line: Line,
     pub message: String,

@@ -1,221 +1,260 @@
 use crate::{
     error::{LoxError, Report},
-    grammar::{Expression, Statement},
+    grammar::{Declaration, Expression},
     token::{TokenType, Tokens},
 };
 
-pub fn parse(mut tokens: Tokens) -> Result<Vec<Statement>, Report> {
-    let mut statements: Vec<Statement> = vec![];
+pub fn parse(mut tokens: Tokens) -> Result<Vec<Declaration>, Report> {
+    let mut declarations: Vec<Declaration> = vec![];
     let mut report = Report::new();
 
-    while let Some(statement) = parse_statement(&mut tokens, &mut report) {
-        statements.push(statement);
+    let mut declaration = parse_declaration(&mut tokens);
+    while declaration != Ok(None) {
+        if let Err(error) = declaration {
+            report.push(error);
+
+            if tokens.consume_until_semicolon() == None {
+                break;
+            }
+        } else {
+            let declaration = declaration.expect("Err should be caught before the current case");
+            let declaration = declaration.expect("None should not get in this loop");
+
+            declarations.push(declaration);
+        }
+
+        declaration = parse_declaration(&mut tokens);
     }
 
     if report.is_empty() {
-        Ok(statements)
+        Ok(declarations)
     } else {
         Err(report)
     }
 }
 
-fn parse_statement(tokens: &mut Tokens, report: &mut Report) -> Option<Statement> {
-    let token_type = tokens.peek_type().expect("Invalid tokens list"); // TODO: Improve error handling
-    let statement = match token_type {
+fn parse_declaration(tokens: &mut Tokens) -> Result<Option<Declaration>, LoxError> {
+    match tokens.peek_type() {
         TokenType::Eof => {
             tokens.next();
-            None
-        }
-        TokenType::Print => {
-            tokens.next();
-            let expression = parse_expression(tokens, report)?;
-            Some(Statement::Print(expression))
-        }
-        _ => {
-            let expression = parse_expression(tokens, report)?;
-            Some(Statement::Expression(expression))
-        }
-    }?;
 
-    let next_token_type = tokens.peek_type()?; // TODO: Improve error handling
-    if let TokenType::Semicolon = next_token_type {
-        tokens.next();
-        Some(statement)
-    } else {
-        report.push(LoxError {
-            line: 1000,
-            message: "Expected ';'".to_owned(),
-        }); // TODO: improve line handling
-        None
+            Ok(None)
+        }
+        TokenType::Var => {
+            tokens.next();
+
+            match tokens.peek_type() {
+                TokenType::Identifier(id) => {
+                    tokens.next();
+
+                    let declaration = if tokens.peek_type() == TokenType::Equal {
+                        tokens.next();
+
+                        let expression = parse_expression(tokens)?;
+                        Declaration::Var(id, Some(expression))
+                    } else {
+                        Declaration::Var(id, None)
+                    };
+                    tokens.consume_semicolon()?;
+
+                    Ok(Some(declaration))
+                }
+                _ => {
+                    let token = tokens.peek();
+                    Err(LoxError {
+                        line: token.line,
+                        message: format!("Expected identifier, got {} instead.", token.lexeme),
+                    })
+                }
+            }
+        }
+        _ => parse_statement(tokens).map(|statement| Some(statement)),
     }
 }
 
-fn parse_expression(tokens: &mut Tokens, report: &mut Report) -> Option<Expression> {
-    parse_equality(tokens, report)
+fn parse_statement(tokens: &mut Tokens) -> Result<Declaration, LoxError> {
+    let statement = match tokens.peek_type() {
+        TokenType::Print => {
+            tokens.next();
+
+            let expression = parse_expression(tokens)?;
+            Ok(Declaration::Print(expression))
+        }
+        _ => {
+            let expression = parse_expression(tokens)?;
+            Ok(Declaration::Expression(expression))
+        }
+    }?;
+    tokens.consume_semicolon()?;
+
+    Ok(statement)
 }
 
-fn parse_equality(tokens: &mut Tokens, report: &mut Report) -> Option<Expression> {
-    let left = parse_comparison(tokens, report)?;
+fn parse_expression(tokens: &mut Tokens) -> Result<Expression, LoxError> {
+    parse_equality(tokens)
+}
 
-    match tokens.peek()?.token_type {
+fn parse_equality(tokens: &mut Tokens) -> Result<Expression, LoxError> {
+    let left = parse_comparison(tokens)?;
+
+    match tokens.peek_type() {
         TokenType::BangEqual => {
             tokens.next();
-            Some(Expression::NotEqual(
-                Box::new(left),
-                Box::new(parse_equality(tokens, report)?),
-            ))
+
+            let right = parse_equality(tokens)?;
+            Ok(Expression::NotEqual(Box::new(left), Box::new(right)))
         }
         TokenType::EqualEqual => {
             tokens.next();
-            let right = parse_equality(tokens, report)?;
-            Some(Expression::Equal(Box::new(left), Box::new(right)))
+
+            let right = parse_equality(tokens)?;
+            Ok(Expression::Equal(Box::new(left), Box::new(right)))
         }
-        _ => Some(left),
+        _ => Ok(left),
     }
 }
 
-fn parse_comparison(tokens: &mut Tokens, report: &mut Report) -> Option<Expression> {
-    let left = parse_term(tokens, report)?;
+fn parse_comparison(tokens: &mut Tokens) -> Result<Expression, LoxError> {
+    let left = parse_term(tokens)?;
 
-    match tokens.peek()?.token_type {
+    match tokens.peek_type() {
         TokenType::LessEqual => {
             tokens.next();
-            Some(Expression::LessEqual(
-                Box::new(left),
-                Box::new(parse_comparison(tokens, report)?),
-            ))
+
+            let right = parse_comparison(tokens)?;
+            Ok(Expression::LessEqual(Box::new(left), Box::new(right)))
         }
         TokenType::Less => {
             tokens.next();
-            Some(Expression::Less(
-                Box::new(left),
-                Box::new(parse_comparison(tokens, report)?),
-            ))
+
+            let right = parse_comparison(tokens)?;
+            Ok(Expression::Less(Box::new(left), Box::new(right)))
         }
         TokenType::GreaterEqual => {
             tokens.next();
-            Some(Expression::GreaterEqual(
-                Box::new(left),
-                Box::new(parse_comparison(tokens, report)?),
-            ))
+
+            let right = parse_comparison(tokens)?;
+            Ok(Expression::GreaterEqual(Box::new(left), Box::new(right)))
         }
         TokenType::Greater => {
             tokens.next();
-            Some(Expression::Greater(
-                Box::new(left),
-                Box::new(parse_comparison(tokens, report)?),
-            ))
+
+            let right = parse_comparison(tokens)?;
+            Ok(Expression::Greater(Box::new(left), Box::new(right)))
         }
-        _ => Some(left),
+        _ => Ok(left),
     }
 }
 
-fn parse_term(tokens: &mut Tokens, report: &mut Report) -> Option<Expression> {
-    let left = parse_factor(tokens, report)?;
+fn parse_term(tokens: &mut Tokens) -> Result<Expression, LoxError> {
+    let left = parse_factor(tokens)?;
 
-    match tokens.peek()?.token_type {
+    match tokens.peek_type() {
         TokenType::Minus => {
             tokens.next();
-            Some(Expression::Minus(
-                Box::new(left),
-                Box::new(parse_term(tokens, report)?),
-            ))
+
+            let right = parse_term(tokens)?;
+            Ok(Expression::Minus(Box::new(left), Box::new(right)))
         }
         TokenType::Plus => {
             tokens.next();
-            Some(Expression::Plus(
-                Box::new(left),
-                Box::new(parse_term(tokens, report)?),
-            ))
+
+            let right = parse_term(tokens)?;
+            Ok(Expression::Plus(Box::new(left), Box::new(right)))
         }
-        _ => Some(left),
+        _ => Ok(left),
     }
 }
 
-fn parse_factor(tokens: &mut Tokens, report: &mut Report) -> Option<Expression> {
-    let left = parse_unary(tokens, report)?;
+fn parse_factor(tokens: &mut Tokens) -> Result<Expression, LoxError> {
+    let left = parse_unary(tokens)?;
 
-    match tokens.peek_type()? {
+    match tokens.peek_type() {
         TokenType::Slash => {
             tokens.next();
-            Some(Expression::Divide(
-                Box::new(left),
-                Box::new(parse_factor(tokens, report)?),
-            ))
+
+            let right = parse_factor(tokens)?;
+            Ok(Expression::Divide(Box::new(left), Box::new(right)))
         }
         TokenType::Star => {
             tokens.next();
-            Some(Expression::Multiply(
-                Box::new(left),
-                Box::new(parse_factor(tokens, report)?),
-            ))
+
+            let right = parse_factor(tokens)?;
+            Ok(Expression::Multiply(Box::new(left), Box::new(right)))
         }
-        _ => Some(left),
+        _ => Ok(left),
     }
 }
 
-fn parse_unary(tokens: &mut Tokens, report: &mut Report) -> Option<Expression> {
-    match tokens.peek_type()? {
+fn parse_unary(tokens: &mut Tokens) -> Result<Expression, LoxError> {
+    match tokens.peek_type() {
         TokenType::Bang => {
             tokens.next();
-            Some(Expression::Not(Box::new(parse_unary(tokens, report)?)))
+
+            let expression = parse_unary(tokens)?;
+            Ok(Expression::Not(Box::new(expression)))
         }
         TokenType::Minus => {
             tokens.next();
-            Some(Expression::Minus(
-                Box::new(Expression::Number(0.into())),
-                Box::new(parse_unary(tokens, report)?),
-            ))
+
+            let expression = parse_unary(tokens)?;
+            let zero = Expression::Number(0.);
+            Ok(Expression::Minus(Box::new(zero), Box::new(expression)))
         }
-        _ => parse_primary(tokens, report),
+        _ => parse_primary(tokens),
     }
 }
 
-fn parse_primary(tokens: &mut Tokens, report: &mut Report) -> Option<Expression> {
-    match tokens.peek_type()? {
+fn parse_primary(tokens: &mut Tokens) -> Result<Expression, LoxError> {
+    match tokens.peek_type() {
         TokenType::Number(n) => {
             tokens.next();
-            Some(Expression::Number(n))
+            Ok(Expression::Number(n))
         }
         TokenType::String(s) => {
-            let s = s.clone();
             tokens.next();
-            Some(Expression::String(s))
+            Ok(Expression::String(s.clone()))
         }
         TokenType::True => {
             tokens.next();
-            Some(Expression::True)
+            Ok(Expression::True)
         }
         TokenType::False => {
             tokens.next();
-            Some(Expression::False)
+            Ok(Expression::False)
         }
         TokenType::Nil => {
             tokens.next();
-            Some(Expression::Nil)
+            Ok(Expression::Nil)
         }
         TokenType::LeftParen => {
-            tokens.next()?;
-            let result = Expression::Paren(Box::new(parse_expression(tokens, report)?));
+            tokens.next();
 
-            let token = tokens.next()?;
-            if let TokenType::RightParen = token.token_type {
-                Some(result)
+            let expression = parse_expression(tokens)?;
+
+            if tokens.peek_type() == TokenType::RightParen {
+                tokens.next();
+
+                let expression = Expression::Paren(Box::new(expression));
+                Ok(expression)
             } else {
-                report.push(LoxError {
+                let token = tokens.peek();
+                Err(LoxError {
                     line: token.line,
                     message: format!("Expected ')' got '{}' instead", token.lexeme),
-                });
-                None
+                })
             }
         }
+        TokenType::Identifier(id) => {
+            tokens.next();
+            Ok(Expression::Variable(id))
+        }
         _ => {
-            let token = tokens.next()?;
-            report.push(LoxError {
+            let token = tokens.peek();
+            Err(LoxError {
                 line: token.line,
-                message: "Expected expression".to_owned(),
-            });
-            None
+                message: format!("Expected expression, got {}", token.lexeme),
+            })
         }
     }
 }

@@ -64,7 +64,7 @@ fn scan_tokens_rec(mut source: Source, tokens: &mut Vec<Token>, report: &mut Rep
                     source.consume_until('"');
                     match source.maybe_next_char('"') {
                         Some(_) => Some(TokenType::String(
-                            source.flush_lexeme().trim_matches('"').to_owned(),
+                            source.peek_lexeme().trim_matches('"').to_owned(),
                         )),
                         None => {
                             report.push(LoxError {
@@ -81,7 +81,7 @@ fn scan_tokens_rec(mut source: Source, tokens: &mut Vec<Token>, report: &mut Rep
                         source.consume_digits();
                     };
 
-                    let number_string = source.flush_lexeme();
+                    let number_string = source.peek_lexeme();
                     let number: Result<f64, _> = number_string.parse();
 
                     match number {
@@ -97,7 +97,7 @@ fn scan_tokens_rec(mut source: Source, tokens: &mut Vec<Token>, report: &mut Rep
                 }
                 c if c.is_alphabetic() || c == '_' => {
                     source.consume_alphanumeric();
-                    let identifier = source.flush_lexeme();
+                    let identifier = source.peek_lexeme();
                     match &identifier[..] {
                         "and" => Some(TokenType::And),
                         "class" => Some(TokenType::Class),

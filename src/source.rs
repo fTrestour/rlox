@@ -65,6 +65,10 @@ impl Source<'_> {
         }
     }
 
+    pub fn peek_lexeme(&self) -> String {
+        self.pending_lexeme.clone()
+    }
+
     pub fn flush_lexeme(&mut self) -> String {
         let lexeme = self.pending_lexeme.clone();
         self.pending_lexeme = String::new();

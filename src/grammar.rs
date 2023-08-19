@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Expression {
     Number(f64),
     String(String),
@@ -17,10 +17,12 @@ pub enum Expression {
     Multiply(Box<Expression>, Box<Expression>),
     Divide(Box<Expression>, Box<Expression>),
     Paren(Box<Expression>),
+    Variable(String),
 }
 
-#[derive(Debug)]
-pub enum Statement {
+#[derive(Debug, PartialEq)]
+pub enum Declaration {
     Expression(Expression),
     Print(Expression),
+    Var(String, Option<Expression>),
 }
