@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use crate::error::LoxRuntimeError;
 
+#[derive(Clone)]
 pub enum LoxValue {
     LoxNil,
     LoxNumber(f64),
