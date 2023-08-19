@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use crate::{error::LoxRuntimeError, value::LoxValue};
+use crate::{error::LoxRuntimeError, value::Value};
 
 pub struct Environment {
-    map: HashMap<String, LoxValue>,
+    map: HashMap<String, Value>,
 }
 
 impl Environment {
@@ -13,11 +13,11 @@ impl Environment {
         }
     }
 
-    pub fn define(&mut self, k: String, v: Option<LoxValue>) {
-        self.map.insert(k, v.unwrap_or(LoxValue::LoxNil));
+    pub fn define(&mut self, k: String, v: Option<Value>) {
+        self.map.insert(k, v.unwrap_or(Value::Nil));
     }
 
-    pub fn get(&self, k: &str) -> Result<LoxValue, LoxRuntimeError> {
+    pub fn get(&self, k: &str) -> Result<Value, LoxRuntimeError> {
         let v = self.map.get(k).ok_or(LoxRuntimeError {
             message: format!("Undefined variable {}", k),
         })?;
