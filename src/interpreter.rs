@@ -46,6 +46,17 @@ impl Interpreter {
 
                 Ok(())
             }
+            Declaration::If(condition, if_statement, else_statement) => {
+                let condition = self.evaluate(condition)?;
+
+                if condition.is_truthy() {
+                    self.interpret(*if_statement)?;
+                } else if let Some(else_statement) = else_statement {
+                    self.interpret(*else_statement)?;
+                }
+
+                Ok(())
+            }
         }
     }
 

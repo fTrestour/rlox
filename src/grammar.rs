@@ -27,4 +27,5 @@ pub enum Declaration {
     Print(Expression),
     Var(String, Option<Expression>),
     Block(Vec<Declaration>),
+    If(Expression, Box<Declaration>, Option<Box<Declaration>>),
 }

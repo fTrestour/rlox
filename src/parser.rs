@@ -104,6 +104,49 @@ fn parse_statement(tokens: &mut Tokens) -> Result<Declaration, LoxError> {
                 })
             }
         }
+        TokenType::If => {
+            tokens.next();
+
+            if tokens.peek_type() != TokenType::LeftParen {
+                let token = tokens.next();
+
+                return Err(LoxError {
+                    line: token.line,
+                    message: "Expect '(' after 'if'.".to_owned(),
+                });
+            } else {
+                tokens.next();
+            }
+
+            let condition = parse_expression(tokens)?;
+
+            if tokens.peek_type() != TokenType::RightParen {
+                let token = tokens.next();
+
+                return Err(LoxError {
+                    line: token.line,
+                    message: "Expect ')' after 'if'.".to_owned(),
+                });
+            } else {
+                tokens.next();
+            }
+
+            let if_statement = parse_statement(tokens)?;
+
+            if tokens.peek_type() == TokenType::Else {
+                tokens.next();
+
+                let else_statement = parse_statement(tokens)?;
+
+                Ok(Declaration::If(
+                    condition,
+                    Box::new(if_statement),
+                    Some(Box::new(else_statement)),
+                ))
+            } else {
+                Ok(Declaration::If(condition, Box::new(if_statement), None))
+            }
+        }
         _ => {
             let expression = parse_expression(tokens)?;
             tokens.consume_semicolon()?;
