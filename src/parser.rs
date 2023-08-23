@@ -78,14 +78,38 @@ fn parse_statement(tokens: &mut Tokens) -> Result<Declaration, LoxError> {
             tokens.next();
 
             let expression = parse_expression(tokens)?;
+            tokens.consume_semicolon()?;
             Ok(Declaration::Print(expression))
+        }
+        TokenType::LeftBrace => {
+            tokens.next();
+
+            let mut declarations = vec![];
+            while tokens.peek_type() != TokenType::RightBrace
+                && tokens.peek_type() != TokenType::Eof
+            {
+                let declaration = parse_declaration(tokens)?; // FIXME: group errors together and parse all statements
+                declaration.map(|declaration| declarations.push(declaration));
+            }
+
+            if tokens.peek_type() == TokenType::RightBrace {
+                tokens.next();
+
+                Ok(Declaration::Block(declarations))
+            } else {
+                let token = tokens.peek();
+                Err(LoxError {
+                    line: token.line,
+                    message: "Expect '}' after block.".to_owned(),
+                })
+            }
         }
         _ => {
             let expression = parse_expression(tokens)?;
+            tokens.consume_semicolon()?;
             Ok(Declaration::Expression(expression))
         }
     }?;
-    tokens.consume_semicolon()?;
 
     Ok(statement)
 }

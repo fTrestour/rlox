@@ -16,6 +16,12 @@ impl Interpreter {
         }
     }
 
+    pub fn with(environment: Environment) -> Interpreter {
+        Interpreter {
+            environment: environment,
+        }
+    }
+
     pub fn interpret(&mut self, declaration: Declaration) -> Result<(), LoxRuntimeError> {
         match declaration {
             Declaration::Print(expression) => {
@@ -30,6 +36,14 @@ impl Interpreter {
             Declaration::Var(name, value) => {
                 let value = value.map(|value| self.evaluate(value)).transpose()?;
                 self.environment.define(name, value);
+                Ok(())
+            }
+            Declaration::Block(declarations) => {
+                let mut interpreter = Interpreter::with(self.environment.new_local());
+                for declaration in declarations {
+                    interpreter.interpret(declaration)?;
+                }
+
                 Ok(())
             }
         }
