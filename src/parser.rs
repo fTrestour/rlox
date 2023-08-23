@@ -162,7 +162,7 @@ fn parse_expression(tokens: &mut Tokens) -> Result<Expression, LoxError> {
 }
 
 fn parse_assignment(tokens: &mut Tokens) -> Result<Expression, LoxError> {
-    let left = parse_equality(tokens)?;
+    let left = parse_or(tokens)?;
 
     if tokens.peek_type() == TokenType::Equal {
         tokens.next();
@@ -177,6 +177,32 @@ fn parse_assignment(tokens: &mut Tokens) -> Result<Expression, LoxError> {
                 message: format!("Invalid assignment target."),
             })
         }
+    } else {
+        Ok(left)
+    }
+}
+
+fn parse_or(tokens: &mut Tokens) -> Result<Expression, LoxError> {
+    let left = parse_and(tokens)?;
+
+    if tokens.peek_type() == TokenType::Or {
+        tokens.next();
+
+        let right = parse_or(tokens)?;
+        Ok(Expression::Or(Box::new(left), Box::new(right)))
+    } else {
+        Ok(left)
+    }
+}
+
+fn parse_and(tokens: &mut Tokens) -> Result<Expression, LoxError> {
+    let left = parse_equality(tokens)?;
+
+    if tokens.peek_type() == TokenType::And {
+        tokens.next();
+
+        let right = parse_and(tokens)?;
+        Ok(Expression::And(Box::new(left), Box::new(right)))
     } else {
         Ok(left)
     }

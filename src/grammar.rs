@@ -19,6 +19,8 @@ pub enum Expression {
     Paren(Box<Expression>),
     Variable(String),
     Assignment(String, Box<Expression>),
+    And(Box<Expression>, Box<Expression>),
+    Or(Box<Expression>, Box<Expression>),
 }
 
 #[derive(Debug, PartialEq)]

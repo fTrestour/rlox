@@ -149,6 +149,26 @@ impl Interpreter {
 
                 Ok(value)
             }
+            Expression::And(left, right) => {
+                let left = self.evaluate(*left)?;
+                if left.is_truthy() {
+                    let right = self.evaluate(*right)?;
+
+                    Ok(right)
+                } else {
+                    Ok(left)
+                }
+            }
+            Expression::Or(left, right) => {
+                let left = self.evaluate(*left)?;
+                if !left.is_truthy() {
+                    let right = self.evaluate(*right)?;
+
+                    Ok(right)
+                } else {
+                    Ok(left)
+                }
+            }
         }
     }
 }
