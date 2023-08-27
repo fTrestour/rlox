@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
     Number(f64),
     String(String),
@@ -23,11 +23,12 @@ pub enum Expression {
     Or(Box<Expression>, Box<Expression>),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Declaration {
     Expression(Expression),
     Print(Expression),
     Var(String, Option<Expression>),
     Block(Vec<Declaration>),
     If(Expression, Box<Declaration>, Option<Box<Declaration>>),
+    While(Expression, Box<Declaration>),
 }

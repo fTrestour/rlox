@@ -147,6 +147,37 @@ fn parse_statement(tokens: &mut Tokens) -> Result<Declaration, LoxError> {
                 Ok(Declaration::If(condition, Box::new(if_statement), None))
             }
         }
+        TokenType::While => {
+            tokens.next();
+
+            if tokens.peek_type() != TokenType::LeftParen {
+                let token = tokens.peek();
+
+                return Err(LoxError {
+                    line: token.line,
+                    message: "Expect ')' after 'while'.".to_owned(),
+                });
+            } else {
+                tokens.next();
+            }
+
+            let condition = parse_expression(tokens)?;
+
+            if tokens.peek_type() != TokenType::RightParen {
+                let token = tokens.peek();
+
+                return Err(LoxError {
+                    line: token.line,
+                    message: "Expect ')' after 'while'.".to_owned(),
+                });
+            } else {
+                tokens.next();
+            }
+
+            let while_statement = parse_statement(tokens)?;
+
+            Ok(Declaration::While(condition, Box::new(while_statement)))
+        }
         _ => {
             let expression = parse_expression(tokens)?;
             tokens.consume_semicolon()?;

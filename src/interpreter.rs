@@ -57,6 +57,13 @@ impl Interpreter {
 
                 Ok(())
             }
+            Declaration::While(condition, while_statement) => {
+                while self.evaluate(condition.clone())?.is_truthy() {
+                    self.interpret(*while_statement.clone())?;
+                }
+
+                Ok(())
+            }
         }
     }
 
