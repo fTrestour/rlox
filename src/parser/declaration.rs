@@ -1,3 +1,4 @@
+use crate::grammar::Expression;
 use crate::parser::expression::parse_expression;
 use crate::{
     error::LoxError,
@@ -48,8 +49,58 @@ fn parse_statement(tokens: &mut Tokens) -> Result<Declaration, LoxError> {
         TokenType::LeftBrace => parse_block(tokens),
         TokenType::If => parse_if(tokens),
         TokenType::While => parse_while(tokens),
+        TokenType::For => parse_for(tokens),
         _ => parse_expression_statement(tokens),
     }
+}
+
+fn parse_for(tokens: &mut Tokens) -> Result<Declaration, LoxError> {
+    tokens.consume(TokenType::For)?;
+
+    tokens.consume(TokenType::LeftParen)?;
+
+    let initializer = match tokens.peek_type() {
+        TokenType::Semicolon => {
+            tokens.next();
+            None
+        }
+        TokenType::Var => Some(parse_var_declaration(tokens)?),
+        _ => Some(parse_expression_statement(tokens)?),
+    };
+
+    let condition = if tokens.consume(TokenType::Semicolon).is_ok() {
+        None
+    } else {
+        let expression = parse_expression(tokens)?;
+        tokens.consume(TokenType::Semicolon)?;
+
+        Some(expression)
+    };
+
+    let increment = if tokens.consume(TokenType::Semicolon).is_ok() {
+        None
+    } else {
+        Some(parse_expression(tokens)?)
+    };
+    tokens.consume(TokenType::RightParen)?;
+
+    let mut body = parse_statement(tokens)?;
+
+    if let Some(increment) = increment {
+        body = Declaration::Block(vec![body, Declaration::Expression(increment)]);
+    }
+
+    if let Some(condition) = condition {
+        body = Declaration::While(condition, Box::new(body));
+    } else {
+        body = Declaration::While(Expression::True, Box::new(body));
+    }
+
+    if let Some(initializer) = initializer {
+        body = Declaration::Block(vec![initializer, body])
+    }
+
+    Ok(body)
 }
 
 fn parse_expression_statement(tokens: &mut Tokens) -> Result<Declaration, LoxError> {
