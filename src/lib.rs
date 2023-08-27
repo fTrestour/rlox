@@ -10,7 +10,8 @@ mod types;
 mod value;
 
 use anyhow::{Context, Result};
-use interpreter::Interpreter;
+use environment::Environment;
+use interpreter::interpret;
 use parser::parse;
 use scanner::scan;
 use source::Source;
@@ -23,18 +24,18 @@ use token::Tokens;
 pub fn run_file(filename: &str) -> Result<()> {
     let file =
         fs::read_to_string(&filename).context(format!("Failed reading file {}", filename))?;
-    let mut interpreter = Interpreter::new();
-    run(&file, &mut interpreter).context("Failed running lox code")
+    let mut environment = Environment::new_global();
+    run(&file, &mut environment).context("Failed running lox code")
 }
 
 pub fn run_prompt() -> Result<()> {
-    let mut interpreter = Interpreter::new();
+    let mut environment = Environment::new_global();
 
     loop {
         let line = invite()?;
 
         if !line.is_empty() {
-            run(&line, &mut interpreter);
+            run(&line, &mut environment);
         }
     }
 }
@@ -50,7 +51,7 @@ fn invite() -> Result<String> {
 }
 
 // TODO: return a result to differentiate static vs runtime errors
-fn run(source: &str, interpreter: &mut Interpreter) -> Option<()> {
+fn run(source: &str, environment: &mut Environment) -> Option<()> {
     let source = Source::new(source);
     let tokens = scan(source);
 
@@ -60,7 +61,7 @@ fn run(source: &str, interpreter: &mut Interpreter) -> Option<()> {
     match statements {
         Ok(statements) => {
             for statement in statements {
-                if let Err(error) = interpreter.interpret(statement) {
+                if let Err(error) = interpret(statement, environment) {
                     println!("{}", error);
                     return None;
                 }
