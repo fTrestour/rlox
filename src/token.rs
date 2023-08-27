@@ -45,6 +45,12 @@ pub enum TokenType {
     Eof,
 }
 
+impl fmt::Display for TokenType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
@@ -54,7 +60,7 @@ pub struct Token {
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?} {} l.{}", self.token_type, self.lexeme, self.line)
+        write!(f, "{} {} l.{}", self.token_type, self.lexeme, self.line)
     }
 }
 
@@ -86,15 +92,15 @@ impl Tokens {
             .expect("Tokens should not be read after EOF")
     }
 
-    pub fn consume_semicolon(&mut self) -> Result<(), LoxError> {
-        if self.peek_type() == TokenType::Semicolon {
+    pub fn consume(&mut self, token_type: TokenType) -> Result<(), LoxError> {
+        if self.peek_type() == token_type {
             self.next();
             Ok(())
         } else {
             let token = self.peek();
             Err(LoxError {
                 line: token.line,
-                message: format!("Expected ';', got '{}' instead", token.lexeme),
+                message: format!("Expected '{}', got '{}' instead", token_type, token.lexeme),
             })
         }
     }
