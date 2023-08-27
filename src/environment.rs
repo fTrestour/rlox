@@ -1,38 +1,37 @@
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap};
 
 use crate::{error::LoxRuntimeError, value::Value};
 
-#[derive(Clone)]
-pub struct Environment {
-    enclosing: Option<Box<Environment>>,
-    map: HashMap<String, Value>,
+pub struct Environment<'a> {
+    enclosing: Option<&'a Environment<'a>>,
+    map: RefCell<HashMap<String, Value>>,
 }
 
-impl Environment {
-    pub fn new_global() -> Environment {
+impl<'a> Environment<'a> {
+    pub fn new_global() -> Environment<'static> {
         Environment {
-            map: HashMap::new(),
+            map: RefCell::new(HashMap::new()),
             enclosing: None,
         }
     }
 
-    pub fn new_local(&self) -> Environment {
+    pub fn new_local(&'a self) -> Environment<'a> {
         Environment {
-            map: HashMap::new(),
-            enclosing: Some(Box::new(self.clone())),
+            map: RefCell::new(HashMap::new()),
+            enclosing: Some(self),
         }
     }
 
-    pub fn define(&mut self, k: String, v: Option<Value>) {
-        self.map.insert(k, v.unwrap_or(Value::Nil));
+    pub fn define(&self, k: String, v: Option<Value>) {
+        self.map.borrow_mut().insert(k, v.unwrap_or(Value::Nil));
     }
 
-    pub fn assign(&mut self, k: String, v: Value) -> Result<(), LoxRuntimeError> {
-        if self.map.contains_key(&k) {
-            self.map.insert(k, v);
+    pub fn assign(&self, k: String, v: Value) -> Result<(), LoxRuntimeError> {
+        if self.map.borrow().contains_key(&k) {
+            self.map.borrow_mut().insert(k, v);
             Ok(())
-        } else if let Some(enclosing_environment) = &mut self.enclosing {
-            enclosing_environment.as_mut().assign(k, v)
+        } else if let Some(enclosing_environment) = &self.enclosing {
+            enclosing_environment.assign(k, v)
         } else {
             Err(LoxRuntimeError {
                 message: format!("Undefined variable {}", k),
@@ -41,7 +40,8 @@ impl Environment {
     }
 
     pub fn get(&self, k: &str) -> Result<Value, LoxRuntimeError> {
-        let v = self.map.get(k);
+        let map = self.map.borrow();
+        let v = map.get(k);
 
         if let Some(v) = v {
             Ok(v.to_owned())
