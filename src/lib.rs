@@ -25,7 +25,7 @@ pub fn run_file(filename: &str) -> Result<()> {
     let file =
         fs::read_to_string(&filename).context(format!("Failed reading file {}", filename))?;
     let mut environment = Environment::new_global();
-    run(&file, &mut environment).context("Failed running lox code")
+    run(&file, &environment).context("Failed running lox code")
 }
 
 pub fn run_prompt() -> Result<()> {
@@ -35,7 +35,7 @@ pub fn run_prompt() -> Result<()> {
         let line = invite()?;
 
         if !line.is_empty() {
-            run(&line, &mut environment);
+            run(&line, &environment);
         }
     }
 }
@@ -51,7 +51,7 @@ fn invite() -> Result<String> {
 }
 
 // TODO: return a result to differentiate static vs runtime errors
-fn run(source: &str, environment: &mut Environment) -> Option<()> {
+fn run(source: &str, environment: &Environment) -> Option<()> {
     let source = Source::new(source);
     let tokens = scan(source);
 

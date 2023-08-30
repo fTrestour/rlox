@@ -1,5 +1,6 @@
 use crate::grammar::Expression;
 use crate::parser::expression::parse_expression;
+
 use crate::{
     error::LoxError,
     grammar::Declaration,
@@ -14,7 +15,66 @@ pub fn parse_declaration(tokens: &mut Tokens) -> Result<Option<Declaration>, Lox
             Ok(None)
         }
         TokenType::Var => Some(parse_var_declaration(tokens)).transpose(),
+        TokenType::Fun => Some(parse_fun_declaration(tokens)).transpose(),
         _ => Some(parse_statement(tokens)).transpose(),
+    }
+}
+
+fn parse_fun_declaration(tokens: &mut Tokens) -> Result<Declaration, LoxError> {
+    tokens.consume(TokenType::Fun)?;
+    parse_function(tokens)
+}
+
+fn parse_function(tokens: &mut Tokens) -> Result<Declaration, LoxError> {
+    if let TokenType::Identifier(function_name) = tokens.peek_type() {
+        tokens.next();
+
+        tokens.consume(TokenType::LeftParen)?;
+        let parameters = parse_parameters(tokens).or(Ok(vec![]))?;
+        tokens.consume(TokenType::RightParen)?;
+        let body = parse_block(tokens)?;
+
+        Ok(Declaration::Function(
+            function_name,
+            parameters,
+            Box::new(body),
+        ))
+    } else {
+        let token = tokens.peek();
+        Err(LoxError {
+            line: token.line,
+            message: format!("Expected identifier, got {}.", token.lexeme),
+        })
+    }
+}
+
+fn parse_parameters(tokens: &mut Tokens) -> Result<Vec<String>, LoxError> {
+    if let TokenType::Identifier(parameter) = tokens.peek_type() {
+        tokens.next();
+
+        let mut parameters = vec![parameter];
+        while tokens.peek_type() != TokenType::RightParen && tokens.peek_type() != TokenType::Eof {
+            tokens.consume(TokenType::Comma)?;
+
+            if let TokenType::Identifier(parameter) = tokens.peek_type() {
+                tokens.next();
+                parameters.push(parameter);
+            } else {
+                let token = tokens.peek();
+                return Err(LoxError {
+                    line: token.line,
+                    message: format!("Expected identifier, got {}.", token.lexeme),
+                });
+            }
+        }
+
+        Ok(parameters)
+    } else {
+        let token = tokens.peek();
+        Err(LoxError {
+            line: token.line,
+            message: format!("Expected identifier, got {}.", token.lexeme),
+        })
     }
 }
 
