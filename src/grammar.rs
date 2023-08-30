@@ -21,6 +21,7 @@ pub enum Expression {
     Assignment(String, Box<Expression>),
     And(Box<Expression>, Box<Expression>),
     Or(Box<Expression>, Box<Expression>),
+    Call(Box<Expression>, Vec<Expression>),
 }
 
 #[derive(Debug, PartialEq, Clone)]

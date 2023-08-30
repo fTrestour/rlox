@@ -1,13 +1,13 @@
-use std::fmt::Display;
+use std::{fmt::Display, rc::Rc};
 
-use crate::error::LoxRuntimeError;
-
+use crate::{environment::Environment, error::LoxRuntimeError};
 #[derive(Clone)]
 pub enum Value {
     Nil,
     Number(f64),
     String(String),
     Boolean(bool),
+    Callable(String, usize, Rc<dyn Fn() -> Value>),
 }
 
 impl Display for Value {
@@ -18,6 +18,7 @@ impl Display for Value {
             Value::Number(n) => write!(f, "{:.2}", n),
             Value::String(s) => write!(f, "\"{}\"", s),
             Value::Boolean(b) => write!(f, "{}", b),
+            Value::Callable(name, _, _) => write!(f, "{}()", name),
         }
     }
 }
@@ -36,6 +37,22 @@ impl Value {
             _ => Err(LoxRuntimeError {
                 message: format!("{} is not a number", self),
             }),
+        }
+    }
+
+    pub fn call(&self, _: &Environment, args: Vec<Value>) -> Result<Value, LoxRuntimeError> {
+        if let Value::Callable(_, arity, call) = self {
+            if args.len() != *arity {
+                Err(LoxRuntimeError {
+                    message: format!("Expected {} arguments but got {}.", arity, args.len()),
+                })
+            } else {
+                Ok(call())
+            }
+        } else {
+            Err(LoxRuntimeError {
+                message: "Can only call functions and classes".to_owned(),
+            })
         }
     }
 

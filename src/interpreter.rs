@@ -166,5 +166,17 @@ pub fn evaluate(
                 Ok(left)
             }
         }
+        Expression::Call(callee, arguments) => {
+            let callee = evaluate(*callee, environment)?;
+
+            let mut evaluated_arguments = vec![];
+            for argument in arguments {
+                let argument = evaluate(argument, environment)?;
+                evaluated_arguments.push(argument);
+            }
+
+            let result = callee.call(environment, evaluated_arguments)?;
+            Ok(result)
+        }
     }
 }

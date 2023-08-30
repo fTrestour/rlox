@@ -64,6 +64,7 @@ impl fmt::Display for Token {
     }
 }
 
+#[derive(Debug)]
 pub struct Tokens {
     peekable: Peekable<IntoIter<Token>>,
 }

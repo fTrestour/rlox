@@ -159,7 +159,48 @@ fn parse_unary(tokens: &mut Tokens) -> Result<Expression, LoxError> {
             let zero = Expression::Number(0.);
             Ok(Expression::Minus(Box::new(zero), Box::new(expression)))
         }
-        _ => parse_primary(tokens),
+        _ => parse_call(tokens),
+    }
+}
+
+fn parse_call(tokens: &mut Tokens) -> Result<Expression, LoxError> {
+    let mut expression = parse_primary(tokens)?;
+
+    while tokens.consume(TokenType::LeftParen).is_ok() {
+        let arguments = match tokens.consume(TokenType::RightParen) {
+            Ok(_) => Ok(vec![]),
+            Err(_) => {
+                let args = parse_args(tokens)?;
+                tokens.consume(TokenType::RightParen)?;
+                Ok(args)
+            }
+        }?;
+
+        expression = Expression::Call(Box::new(expression), arguments);
+    }
+
+    Ok(expression)
+}
+
+fn parse_args(tokens: &mut Tokens) -> Result<Vec<Expression>, LoxError> {
+    let expression = parse_expression(tokens)?;
+
+    let mut args = vec![expression];
+    while tokens.consume(TokenType::Comma).is_ok() {
+        let expression = parse_expression(tokens)?;
+        args.push(expression);
+    }
+
+    if args.len() >= 255 {
+        let token = tokens.peek();
+        // FIXME: This doesn't handle the error well, we should return the args anyway
+        // We want to report the error, not throw it
+        Err(LoxError {
+            line: token.line,
+            message: format!("Can't have more than 255 arguments."),
+        })
+    } else {
+        Ok(args)
     }
 }
 
