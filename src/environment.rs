@@ -1,17 +1,19 @@
+use std::rc::Rc;
 use std::{cell::RefCell, collections::HashMap};
 
 use crate::standard::clock;
 use crate::{error::LoxRuntimeException, value::Value};
 
-pub struct Environment<'a> {
-    enclosing: Option<&'a Environment<'a>>,
-    map: RefCell<HashMap<String, Value>>,
+#[derive(Clone)]
+pub struct Environment {
+    enclosing: Option<Box<Environment>>,
+    locals: Rc<RefCell<HashMap<String, Value>>>,
 }
 
-impl<'a> Environment<'a> {
-    pub fn new_global() -> Environment<'static> {
+impl Environment {
+    pub fn new_global() -> Environment {
         let global = Environment {
-            map: RefCell::new(HashMap::new()),
+            locals: Rc::new(RefCell::new(HashMap::new())),
             enclosing: None,
         };
 
@@ -23,20 +25,20 @@ impl<'a> Environment<'a> {
         global
     }
 
-    pub fn new_local(&'a self) -> Environment<'a> {
+    pub fn new_local(&self) -> Environment {
         Environment {
-            map: RefCell::new(HashMap::new()),
-            enclosing: Some(self),
+            locals: Rc::new(RefCell::new(HashMap::new())),
+            enclosing: Some(Box::new(self.clone())),
         }
     }
 
     pub fn define(&self, k: String, v: Option<Value>) {
-        self.map.borrow_mut().insert(k, v.unwrap_or(Value::Nil));
+        self.locals.borrow_mut().insert(k, v.unwrap_or(Value::Nil));
     }
 
     pub fn assign(&self, k: String, v: Value) -> Result<(), LoxRuntimeException> {
-        if self.map.borrow().contains_key(&k) {
-            self.map.borrow_mut().insert(k, v);
+        if self.locals.borrow().contains_key(&k) {
+            self.locals.borrow_mut().insert(k, v);
             Ok(())
         } else if let Some(enclosing_environment) = &self.enclosing {
             enclosing_environment.assign(k, v)
@@ -49,7 +51,7 @@ impl<'a> Environment<'a> {
     }
 
     pub fn get(&self, k: &str) -> Result<Value, LoxRuntimeException> {
-        let map = self.map.borrow();
+        let map = self.locals.borrow();
         let v = map.get(k);
 
         if let Some(v) = v {
