@@ -52,7 +52,7 @@ pub fn interpret(
             Ok(())
         }
         Declaration::Function(name, parameters, body) => {
-            let callable = Value::Callable(name.clone(), parameters, *body);
+            let callable = Value::Callable(name.clone(), environment.clone(), parameters, *body);
             environment.define(name, Some(callable));
 
             Ok(())
@@ -185,7 +185,7 @@ pub fn evaluate(
                 evaluated_arguments.push(argument);
             }
 
-            let result = callee.call(environment, evaluated_arguments)?;
+            let result = callee.call(evaluated_arguments)?;
             Ok(result)
         }
     }

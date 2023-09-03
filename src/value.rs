@@ -11,7 +11,7 @@ pub enum Value {
     String(String),
     Boolean(bool),
     NativeCallable(String, usize, fn(Vec<Value>) -> Value),
-    Callable(String, Vec<String>, Declaration),
+    Callable(String, Environment, Vec<String>, Declaration),
 }
 
 impl Display for Value {
@@ -22,7 +22,7 @@ impl Display for Value {
             Value::Number(n) => write!(f, "{:.2}", n),
             Value::String(s) => write!(f, "\"{}\"", s),
             Value::Boolean(b) => write!(f, "{}", b),
-            Value::Callable(name, _, _) => write!(f, "<fn {}>", name),
+            Value::Callable(name, _, _, _) => write!(f, "<fn {}>", name),
             Value::NativeCallable(name, _, _) => write!(f, "<fn {}>", name),
         }
     }
@@ -46,21 +46,17 @@ impl Value {
         }
     }
 
-    pub fn call(
-        &self,
-        environment: &Environment,
-        args: Vec<Value>,
-    ) -> Result<Value, LoxRuntimeException> {
+    pub fn call(&self, args: Vec<Value>) -> Result<Value, LoxRuntimeException> {
         match self {
             Value::NativeCallable(name, arity, f) => {
                 check_callable_arity(&args, *arity, name)?;
 
                 Ok(f(args))
             }
-            Value::Callable(name, parameters, body) => {
+            Value::Callable(name, closure, parameters, body) => {
                 check_callable_arity(&args, parameters.len(), name)?;
 
-                let local_environment = environment.new_local();
+                let local_environment = closure.new_local();
                 for (name, value) in parameters.iter().zip(args.iter()) {
                     local_environment.define(name.clone(), Some(value.clone()));
                 }
