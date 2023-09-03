@@ -25,12 +25,12 @@ use token::Tokens;
 pub fn run_file(filename: &str) -> Result<()> {
     let file =
         fs::read_to_string(&filename).context(format!("Failed reading file {}", filename))?;
-    let mut environment = Environment::new_global();
+    let environment = Environment::new_global();
     run(&file, &environment).context("Failed running lox code")
 }
 
 pub fn run_prompt() -> Result<()> {
-    let mut environment = Environment::new_global();
+    let environment = Environment::new_global();
 
     loop {
         let line = invite()?;

@@ -26,9 +26,9 @@ pub fn interpret(
             Ok(())
         }
         Declaration::Block(declarations) => {
-            let mut local_environment = environment.new_local();
+            let local_environment = environment.new_local();
             for declaration in declarations {
-                interpret(declaration, &mut local_environment)?;
+                interpret(declaration, &local_environment)?;
             }
 
             Ok(())
