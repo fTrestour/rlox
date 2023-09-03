@@ -6,7 +6,7 @@ use crate::{
 };
 pub fn interpret(
     declaration: Declaration,
-    environment: &mut Environment,
+    environment: &Environment,
 ) -> Result<(), LoxRuntimeError> {
     match declaration {
         Declaration::Print(expression) => {
@@ -51,12 +51,18 @@ pub fn interpret(
 
             Ok(())
         }
+        Declaration::Function(name, parameters, body) => {
+            let callable = Value::Callable(name.clone(), parameters, *body);
+            environment.define(name, Some(callable));
+
+            Ok(())
+        }
     }
 }
 
 pub fn evaluate(
     expression: Expression,
-    environment: &mut Environment,
+    environment: &Environment,
 ) -> Result<Value, LoxRuntimeError> {
     match expression {
         Expression::Number(n) => Ok(Value::Number(n)),

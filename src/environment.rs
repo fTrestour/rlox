@@ -1,7 +1,6 @@
-use std::rc::Rc;
-use std::time::{SystemTime, UNIX_EPOCH};
 use std::{cell::RefCell, collections::HashMap};
 
+use crate::standard::clock;
 use crate::{error::LoxRuntimeError, value::Value};
 
 pub struct Environment<'a> {
@@ -18,20 +17,7 @@ impl<'a> Environment<'a> {
 
         global.define(
             "clock".to_owned(),
-            // TODO: Move definition to a standard lib
-            Some(Value::Callable(
-                "clock".to_owned(),
-                0,
-                Rc::new(|| {
-                    let start = SystemTime::now();
-                    let since_the_epoch = start
-                        .duration_since(UNIX_EPOCH)
-                        .expect("Time went backwards")
-                        .as_secs();
-
-                    Value::Number(since_the_epoch as f64)
-                }),
-            )),
+            Some(Value::NativeCallable("clock".to_owned(), 0, clock)),
         );
 
         global

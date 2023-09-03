@@ -1,13 +1,16 @@
-use std::{fmt::Display, rc::Rc};
+use std::fmt::Display;
 
-use crate::{environment::Environment, error::LoxRuntimeError};
+use crate::{
+    environment::Environment, error::LoxRuntimeError, grammar::Declaration, interpreter::interpret,
+};
 #[derive(Clone)]
 pub enum Value {
     Nil,
     Number(f64),
     String(String),
     Boolean(bool),
-    Callable(String, usize, Rc<dyn Fn() -> Value>),
+    NativeCallable(String, usize, fn(Vec<Value>) -> Value),
+    Callable(String, Vec<String>, Declaration),
 }
 
 impl Display for Value {
@@ -18,7 +21,8 @@ impl Display for Value {
             Value::Number(n) => write!(f, "{:.2}", n),
             Value::String(s) => write!(f, "\"{}\"", s),
             Value::Boolean(b) => write!(f, "{}", b),
-            Value::Callable(name, _, _) => write!(f, "{}()", name),
+            Value::Callable(name, _, _) => write!(f, "<fn {}>", name),
+            Value::NativeCallable(name, _, _) => write!(f, "<fn {}>", name),
         }
     }
 }
@@ -40,19 +44,32 @@ impl Value {
         }
     }
 
-    pub fn call(&self, _: &Environment, args: Vec<Value>) -> Result<Value, LoxRuntimeError> {
-        if let Value::Callable(_, arity, call) = self {
-            if args.len() != *arity {
-                Err(LoxRuntimeError {
-                    message: format!("Expected {} arguments but got {}.", arity, args.len()),
-                })
-            } else {
-                Ok(call())
+    pub fn call(
+        &self,
+        environment: &Environment,
+        args: Vec<Value>,
+    ) -> Result<Value, LoxRuntimeError> {
+        match self {
+            Value::NativeCallable(name, arity, f) => {
+                check_callable_arity(&args, *arity, name)?;
+
+                Ok(f(args))
             }
-        } else {
-            Err(LoxRuntimeError {
+            Value::Callable(name, parameters, body) => {
+                check_callable_arity(&args, parameters.len(), name)?;
+
+                let local_environment = environment.new_local();
+                for (name, value) in parameters.iter().zip(args.iter()) {
+                    local_environment.define(name.clone(), Some(value.clone()));
+                }
+
+                interpret(body.clone(), &local_environment)?;
+
+                Ok(Value::Nil)
+            }
+            _ => Err(LoxRuntimeError {
                 message: "Can only call functions and classes".to_owned(),
-            })
+            }),
         }
     }
 
@@ -64,5 +81,24 @@ impl Value {
             (Value::Boolean(b1), Value::Boolean(b2)) => b1 == b2,
             _ => false,
         }
+    }
+}
+
+fn check_callable_arity(
+    args: &Vec<Value>,
+    arity: usize,
+    name: &String,
+) -> Result<(), LoxRuntimeError> {
+    if args.len() != arity {
+        Err(LoxRuntimeError {
+            message: format!(
+                "Function {} expected {} arguments but got {}.",
+                name,
+                arity,
+                args.len()
+            ),
+        })
+    } else {
+        Ok(())
     }
 }

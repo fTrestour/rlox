@@ -5,6 +5,7 @@ mod interpreter;
 mod parser;
 mod scanner;
 mod source;
+mod standard;
 mod token;
 mod types;
 mod value;
