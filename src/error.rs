@@ -1,6 +1,6 @@
 use std::{error::Error, fmt::Display};
 
-use crate::types::Line;
+use crate::{types::Line, value::Value};
 
 #[derive(Debug, PartialEq)]
 pub struct LoxError {
@@ -44,13 +44,17 @@ impl Report {
     }
 }
 
-pub struct LoxRuntimeError {
-    pub message: String,
+pub enum LoxRuntimeException {
+    Error(String),
+    Return(Value),
 }
-// TODO: Add line handling
 
-impl Display for LoxRuntimeError {
+impl Display for LoxRuntimeException {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Runtime error: {}", self.message)
+        match self {
+            // TODO: Add line handling
+            LoxRuntimeException::Error(message) => write!(f, "Runtime error: {}", message),
+            LoxRuntimeException::Return(value) => write!(f, "Return value: {}", value),
+        }
     }
 }

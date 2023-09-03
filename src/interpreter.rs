@@ -1,13 +1,13 @@
 use crate::{
     environment::Environment,
-    error::LoxRuntimeError,
+    error::LoxRuntimeException,
     grammar::{Declaration, Expression},
     value::Value,
 };
 pub fn interpret(
     declaration: Declaration,
     environment: &Environment,
-) -> Result<(), LoxRuntimeError> {
+) -> Result<(), LoxRuntimeException> {
     match declaration {
         Declaration::Print(expression) => {
             let value = evaluate(expression, environment);
@@ -57,13 +57,17 @@ pub fn interpret(
 
             Ok(())
         }
+        Declaration::Return(expression) => {
+            let value = evaluate(expression, environment)?;
+            Err(LoxRuntimeException::Return(value))
+        }
     }
 }
 
 pub fn evaluate(
     expression: Expression,
     environment: &Environment,
-) -> Result<Value, LoxRuntimeError> {
+) -> Result<Value, LoxRuntimeException> {
     match expression {
         Expression::Number(n) => Ok(Value::Number(n)),
         Expression::String(s) => Ok(Value::String(s)),
@@ -102,9 +106,9 @@ pub fn evaluate(
             match (left, right) {
                 (Value::Number(n1), Value::Number(n2)) => Ok(Value::Number(n1 + n2)),
                 (Value::String(s1), Value::String(s2)) => Ok(Value::String(s1 + &s2)),
-                _ => Err(LoxRuntimeError {
-                    message: "Operands must be two numbers or two strings.".to_owned(),
-                }),
+                _ => Err(LoxRuntimeException::Error(
+                    "Operands must be two numbers or two strings.".to_owned(),
+                )),
             }
         }
         Expression::Greater(left, right) => {

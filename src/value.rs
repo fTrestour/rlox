@@ -1,7 +1,8 @@
 use std::fmt::Display;
 
 use crate::{
-    environment::Environment, error::LoxRuntimeError, grammar::Declaration, interpreter::interpret,
+    environment::Environment, error::LoxRuntimeException, grammar::Declaration,
+    interpreter::interpret,
 };
 #[derive(Clone)]
 pub enum Value {
@@ -35,12 +36,13 @@ impl Value {
         }
     }
 
-    pub fn as_number(&self) -> Result<f64, LoxRuntimeError> {
+    pub fn as_number(&self) -> Result<f64, LoxRuntimeException> {
         match *self {
             Value::Number(n) => Ok(n),
-            _ => Err(LoxRuntimeError {
-                message: format!("{} is not a number", self),
-            }),
+            _ => Err(LoxRuntimeException::Error(format!(
+                "{} is not a number",
+                self
+            ))),
         }
     }
 
@@ -48,7 +50,7 @@ impl Value {
         &self,
         environment: &Environment,
         args: Vec<Value>,
-    ) -> Result<Value, LoxRuntimeError> {
+    ) -> Result<Value, LoxRuntimeException> {
         match self {
             Value::NativeCallable(name, arity, f) => {
                 check_callable_arity(&args, *arity, name)?;
@@ -63,13 +65,15 @@ impl Value {
                     local_environment.define(name.clone(), Some(value.clone()));
                 }
 
-                interpret(body.clone(), &local_environment)?;
-
-                Ok(Value::Nil)
+                match interpret(body.clone(), &local_environment) {
+                    Ok(_) => Ok(Value::Nil),
+                    Err(LoxRuntimeException::Return(value)) => Ok(value),
+                    Err(e) => Err(e),
+                }
             }
-            _ => Err(LoxRuntimeError {
-                message: "Can only call functions and classes".to_owned(),
-            }),
+            _ => Err(LoxRuntimeException::Error(
+                "Can only call functions and classes".to_owned(),
+            )),
         }
     }
 
@@ -88,16 +92,14 @@ fn check_callable_arity(
     args: &Vec<Value>,
     arity: usize,
     name: &String,
-) -> Result<(), LoxRuntimeError> {
+) -> Result<(), LoxRuntimeException> {
     if args.len() != arity {
-        Err(LoxRuntimeError {
-            message: format!(
-                "Function {} expected {} arguments but got {}.",
-                name,
-                arity,
-                args.len()
-            ),
-        })
+        Err(LoxRuntimeException::Error(format!(
+            "Function {} expected {} arguments but got {}.",
+            name,
+            arity,
+            args.len()
+        )))
     } else {
         Ok(())
     }

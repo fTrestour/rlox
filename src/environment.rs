@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap};
 
 use crate::standard::clock;
-use crate::{error::LoxRuntimeError, value::Value};
+use crate::{error::LoxRuntimeException, value::Value};
 
 pub struct Environment<'a> {
     enclosing: Option<&'a Environment<'a>>,
@@ -34,20 +34,21 @@ impl<'a> Environment<'a> {
         self.map.borrow_mut().insert(k, v.unwrap_or(Value::Nil));
     }
 
-    pub fn assign(&self, k: String, v: Value) -> Result<(), LoxRuntimeError> {
+    pub fn assign(&self, k: String, v: Value) -> Result<(), LoxRuntimeException> {
         if self.map.borrow().contains_key(&k) {
             self.map.borrow_mut().insert(k, v);
             Ok(())
         } else if let Some(enclosing_environment) = &self.enclosing {
             enclosing_environment.assign(k, v)
         } else {
-            Err(LoxRuntimeError {
-                message: format!("Undefined variable {}", k),
-            })
+            Err(LoxRuntimeException::Error(format!(
+                "Undefined variable {}",
+                k
+            )))
         }
     }
 
-    pub fn get(&self, k: &str) -> Result<Value, LoxRuntimeError> {
+    pub fn get(&self, k: &str) -> Result<Value, LoxRuntimeException> {
         let map = self.map.borrow();
         let v = map.get(k);
 
@@ -56,9 +57,10 @@ impl<'a> Environment<'a> {
         } else if let (None, Some(enclosing_environment)) = (v, &self.enclosing) {
             enclosing_environment.get(k)
         } else {
-            Err(LoxRuntimeError {
-                message: format!("Undefined variable {}", k),
-            })
+            Err(LoxRuntimeException::Error(format!(
+                "Undefined variable {}",
+                k
+            )))
         }
     }
 }

@@ -33,4 +33,5 @@ pub enum Declaration {
     If(Expression, Box<Declaration>, Option<Box<Declaration>>),
     While(Expression, Box<Declaration>),
     Function(String, Vec<String>, Box<Declaration>),
+    Return(Expression),
 }

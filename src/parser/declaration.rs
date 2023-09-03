@@ -110,8 +110,25 @@ fn parse_statement(tokens: &mut Tokens) -> Result<Declaration, LoxError> {
         TokenType::If => parse_if(tokens),
         TokenType::While => parse_while(tokens),
         TokenType::For => parse_for(tokens),
+        TokenType::Return => parse_return(tokens),
         _ => parse_expression_statement(tokens),
     }
+}
+
+fn parse_return(tokens: &mut Tokens) -> Result<Declaration, LoxError> {
+    tokens.consume(TokenType::Return)?;
+
+    let expression = match tokens.consume(TokenType::Semicolon) {
+        Ok(_) => Expression::Nil,
+        Err(_) => {
+            let expression = parse_expression(tokens)?;
+            tokens.consume(TokenType::Semicolon)?;
+
+            expression
+        }
+    };
+
+    Ok(Declaration::Return(expression))
 }
 
 fn parse_for(tokens: &mut Tokens) -> Result<Declaration, LoxError> {
